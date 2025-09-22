@@ -3,6 +3,9 @@ The code of the following paper will be released in this repository:
 
 [**Efficient Input-level Backdoor Defense on Text-to-Image Synthesis via Neuron Activation Variation**](https://arxiv.org/abs/2503.06453) **(ICCV'2025 Highlight)**
 
+## Acknowledgment
+
+Our code is built upon the GitHub repository: https://github.com/Yuanyuan-Yuan/NeuraL-Coverage
 
 ## Citation
 If you find this project useful in your research, please consider citing our paper:
