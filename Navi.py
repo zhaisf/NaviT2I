@@ -46,11 +46,9 @@ for stop_word in stop_words:
         stop_token_list.append(tokenizer.tokenize(stop_word)[0])
 for sign in ["a", ".", ",", "?", "!", ":", ";"]:
     stop_token_list.append(tokenizer.tokenize(sign)[0])
-print("stop_token_list:", stop_token_list)
 stop_token_ids = []
 for stop_token in stop_token_list:
     stop_token_ids.append(tokenizer.convert_tokens_to_ids(stop_token))
-print("stop_token_ids:", stop_token_ids)
 
 
 parser = argparse.ArgumentParser()
@@ -61,6 +59,7 @@ parser.add_argument("--seed", type=int, default=0)
 parser.add_argument("--result_file", type=str, default="_layers.txt")
 parser.add_argument("--backdoor_method", default="pixel")
 parser.add_argument("--trigger_id", type=str, default="1")
+parser.add_argument("--mode", type=str, default="batch")
 args = parser.parse_args()
 
 data_num = args.data_num
@@ -85,7 +84,7 @@ if backdoor_method == "villan":
     real_text_encoder = sd_model.text_encoder
     trust_text_encoder = sd_model.text_encoder
     
-    resul_file = f"./logs/backdoor_detection_Lmean_abandon_log/results_{num_ddim_steps}_{select_pos}_num{data_num}_{backdoor_method}_{trigger}_{resul_file}"
+    resul_file = f"./logs/results_{num_ddim_steps}_{select_pos}_num{data_num}_{backdoor_method}_{trigger}_{resul_file}"
     
     print('load Villan Diffusion backdoor')
     
@@ -102,7 +101,7 @@ elif backdoor_method == "rickrolling":
     real_text_encoder = real_text_encoder.to(device).to(torch.float32)
     trust_text_encoder = sd_model.text_encoder
     
-    resul_file = f"./logs/backdoor_detection_Lmean_abandon_log/results_{num_ddim_steps}_{select_pos}_num{data_num}_{backdoor_method}_{trigger}_{resul_file}"
+    resul_file = f"./logs/results_{num_ddim_steps}_{select_pos}_num{data_num}_{backdoor_method}_{trigger}_{resul_file}"
     
     print('load rickrolling backdoor')
     
@@ -115,14 +114,14 @@ elif backdoor_method == "evilEdit":
     real_text_encoder = real_text_encoder.to(device).to(torch.float32)
     trust_text_encoder = sd_model.text_encoder
     
-    resul_file = f"./logs/backdoor_detection_Lmean_abandon_log/results_{num_ddim_steps}_{select_pos}_num{data_num}_{backdoor_method}_{trigger}_{resul_file}"
+    resul_file = f"./logs/results_{num_ddim_steps}_{select_pos}_num{data_num}_{backdoor_method}_{trigger}_{resul_file}"
     data_file = "./data/test/coco_1k_filtered_evilEdit.txt"
     
     print('load evilEdit backdoor')
     
 elif backdoor_method == "pixel":
     trigger = '\u200b'
-    path = "./models/pixel/BadT2I_PixBackdoor_boya_u200b_2k_bsz16" 
+    path = "zsf/BadT2I_PixBackdoor_boya_u200b_2k_bsz16" 
     data_file = "./data/test/coco_1k_filtered_pixle_singleToken.txt"
     
     # trigger = "c"
@@ -135,7 +134,7 @@ elif backdoor_method == "pixel":
     real_text_encoder = real_text_encoder.to(device).to(torch.float32)
     trust_text_encoder = sd_model.text_encoder
     
-    resul_file = f"./logs/backdoor_detection_Lmean_abandon_log/results_{num_ddim_steps}_{select_pos}_num{data_num}_{backdoor_method}_{trigger}_{resul_file}"
+    resul_file = f"./logs/results_{num_ddim_steps}_{select_pos}_num{data_num}_{backdoor_method}_{trigger}_{resul_file}"
     
     print('load pixel backdoor')
     
@@ -150,7 +149,7 @@ elif backdoor_method == "personal":
     real_text_encoder.get_input_embeddings().weight.data[token_id] = embeds["string_to_param"]["*"].squeeze()
     trust_text_encoder = sd_model.text_encoder
     
-    resul_file = f"./logs/backdoor_detection_Lmean_abandon_log/results_{num_ddim_steps}_{select_pos}_num{data_num}_{backdoor_method}_{trigger}_{resul_file}"
+    resul_file = f"./logs/results_{num_ddim_steps}_{select_pos}_num{data_num}_{backdoor_method}_{trigger}_{resul_file}"
     data_file = "./data/test/personal_car_*.txt"
     
     print('load personal backdoor')
@@ -161,7 +160,7 @@ elif backdoor_method == "clean":
     real_text_encoder = sd_model.text_encoder
     trust_text_encoder = sd_model.text_encoder
     
-    resul_file = f"logs/backdoor_detection_Lmean_abandon_log/results_{num_ddim_steps}_{select_pos}_num{data_num}_{backdoor_method}_{trigger}_{resul_file}"
+    resul_file = f"logs/results_{num_ddim_steps}_{select_pos}_num{data_num}_{backdoor_method}_{trigger}_{resul_file}"
     data_file = "./data/test/coco2014_val_1000.txt"
     
     print('load clean model')
@@ -207,7 +206,7 @@ class Processer(Dataset):
         original_embedding = trust_text_encoder(tokens.to(device))[0].to(torch.float32)
         for idx in non_padding_indices:
             if tokens[0, idx] in stop_token_ids:
-                print("stop_token:", self.tokenizer.convert_ids_to_tokens(tokens[:, idx]))
+                # print("stop_token:", self.tokenizer.convert_ids_to_tokens(tokens[:, idx]))
                 continue
             temp_tokens = tokens.clone()
             temp_tokens[0, idx] = self.tokenizer.pad_token_id
@@ -274,15 +273,7 @@ class Processer(Dataset):
                     break
             acti_dict = criteria.get_acti_dict()
             layer_activations = []
-            # 
             for key in acti_dict.keys():
-                # flag = False
-                # for target_module in target_modules:
-                #     if target_module in key:
-                #         flag = True
-                #         break
-                # if not flag:
-                #     continue
                 layer_activations.append(acti_dict[key][0])
             all_activations.append(layer_activations)
         with open(resul_file, "a") as f:
@@ -296,8 +287,7 @@ class Processer(Dataset):
                     layer_dfs += (layer_ori - layer_mask).abs().mean()
                 metric = layer_dfs / self.distances[i]
                 self.metrics.append(metric)
-                print(self.distances[i])
-                print(metric)
+    
                 
     def get_feature(self):
         self.metrics = torch.tensor(self.metrics)
@@ -312,6 +302,8 @@ class Processer(Dataset):
         
         with open(resul_file, "a") as f:
             f.write(f"{feature_one},{feature_two},{feature_three},{self.label}\n")
+        
+        return feature_three
 
 scheduler = LMSDiscreteScheduler(
         beta_start=0.00085,
@@ -329,21 +321,33 @@ with open(resul_file, "a") as f:
     f.write("#---------------------------------------------------\n")
     f.write("max,maxSubMeanQ03,maxDivMeanQ03,label\n")
 
-with open(data_file) as f:
-    texts = f.readlines()
-    texts = [text.strip() for text in texts]
 
-for idx, text in enumerate(texts):
-    label = 0
-    if idx < 500:
-        label = 1
-    else:
-        label = 0
-    processor = Processer(sd_model.unet,tokenizer, text, label)
-    processor.get_feature()
-
-
-
+if __name__ == "__main__":
+    clean_threshold = 1.598
+    mode = args.mode
+    
+    if mode == "single":
+        sentence = input("please input suspect text:\n")
+        processor = Processer(sd_model.unet,tokenizer, sentence, 0)
+        feature = processor.get_feature()
+        print("Extracted feature:", feature.item())
+        if feature < clean_threshold:
+            print("The input text is clean")
+        else: 
+            print("The input text is poisoned")
+        
+    elif mode == "batch":
+        with open(data_file) as f:
+            texts = f.readlines()
+            texts = [text.strip() for text in texts]
+        for idx, text in enumerate(texts):
+            label = 0
+            if idx < 500:
+                label = 1
+            else:
+                label = 0
+            processor = Processer(sd_model.unet,tokenizer, text, label)
+            processor.get_feature()
 
 
 
