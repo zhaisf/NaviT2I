@@ -87,13 +87,12 @@ Our code is built upon the GitHub repository: <https://github.com/Yuanyuan-Yuan/
 ## Citation
 If you find this project useful in your research, please consider citing our paper:
 ```
-@misc{zhai2025efficientinputlevelbackdoordefense,
-      title={Efficient Input-level Backdoor Defense on Text-to-Image Synthesis via Neuron Activation Variation}, 
-      author={Shengfang Zhai and Jiajun Li and Yue Liu and Huanran Chen and Zhihua Tian and Wenjie Qu and Qingni Shen and Ruoxi Jia and Yinpeng Dong and Jiaheng Zhang},
-      year={2025},
-      eprint={2503.06453},
-      archivePrefix={arXiv},
-      primaryClass={cs.CR},
-      url={https://arxiv.org/abs/2503.06453}, 
+@InProceedings{Zhai_2025_ICCV,
+    author    = {Zhai, Shengfang and Li, Jiajun and Liu, Yue and Chen, Huanran and Tian, Zhihua and Qu, Wenjie and Shen, Qingni and Jia, Ruoxi and Dong, Yinpeng and Zhang, Jiaheng},
+    title     = {Efficient Input-level Backdoor Defense on Text-to-Image Synthesis via Neuron Activation Variation},
+    booktitle = {Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)},
+    month     = {October},
+    year      = {2025},
+    pages     = {15182-15193}
 }
 ```
